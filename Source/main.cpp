@@ -1,21 +1,42 @@
 /*!***************************************************************************
 @file    main.cpp
-@author  <author>
-@par     <email/contact info>
-@date    <date here>
+@author  Matthew Cech
+@par     cech.m@digipen.edu
+@date    12/13/2017
 
 @brief 
-<you can put a multiline description of your application here...>
-
-@copyright See LICENSE.md
+GA experiments, and more!
 *****************************************************************************/
 #include <iostream>               // std::cout
 #include <RUtils/RTimekeeper.hpp>  // Rutils::RException
+
+// Input and drawing utilities.
+#include "console-input.h"
+#include "console-utils.hpp"
+
+// Currently defined classes
+#include "Tile.hpp"
+#include "Manager.hpp"
+
 
 
 // Application entry point
 int main(int argc, char** argv)
 {
+  // Variables
+  GA::Manager manager(80, 20);
+
+  // Setup
+  RConsole::Canvas::SetCursorVisible(true);
+
+  // Primary loop
+  while (manager.Run()) 
+  {
+    RConsole::Canvas::Update();
+  }
+  return 0;
+
+  /*
   // Timing start
   RUtils::Timekeeper t;
   t.StartFrame();   
@@ -30,4 +51,5 @@ int main(int argc, char** argv)
 
   // Normal termination
   return 0;
+  */
 }
