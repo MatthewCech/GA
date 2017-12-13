@@ -1,9 +1,43 @@
 #include "Manager.hpp"
-
+#include <fstream>
+#include <string>
+#include "RUtils/RException.hpp"
 
 
 namespace GA
 {
+  Manager::Manager(std::string file) : _tiles(1, 1)
+  {
+    std::fstream fileObject(file, std::ios::in);
+    if (fileObject.is_open())
+    {
+      try 
+      {
+        std::string buffer;
+        std::getline(fileObject, buffer);
+        _width = std::stoi(buffer);
+        std::getline(fileObject, buffer);
+        _height = std::stoi(buffer);
+        _tiles = RConsole::Field2D<Tile>(_width, _height);
+        size_t lineCount = 0;
+        while (std::getline(fileObject, buffer))
+        {
+          for (int i = 0; i < buffer.size(); ++i)
+            _tiles[i][lineCount] = parseFileChar(buffer[i]);
+
+          ++lineCount;
+        }
+      }
+      catch (...)
+      {
+        throw RUtils::RException("Error during file read! Confirm formatting is correct!");
+      }
+    }
+    else
+      throw RUtils::RException("Specified file not found!");
+  }
+
+
   // Constructor - note: No defaults for this class!
   Manager::Manager(size_t width, size_t height)
     : _tiles(width, height)
@@ -14,7 +48,7 @@ namespace GA
   }
 
 
-  // Places obstacle in the tiles set
+  // Places obstacle in the tiles in code
   void Manager::PlaceRock(size_t x, size_t y, size_t side_size)
   {
     for (size_t i = x; i < x + side_size; ++i)
@@ -22,7 +56,6 @@ namespace GA
         if (getLocSafe(i, j))
           getLocSafe(i, j)->Type = WALL;
   }
-
 
   // Runs the primary application
   bool Manager::Run()
@@ -44,6 +77,31 @@ namespace GA
     }
   }
 
+  Tile parseFileChar(char c)
+  {
+    Tile tile;
+    switch (c)
+    {
+    case '.':
+    case ' ':
+      tile.Type = NONE;
+      break;
+    case '#':
+      tile.Type = WALL;
+      break;
+    case 'g':
+    case 'G':
+      tile.Type = WALL;
+      break;
+    case 's':
+    case 'a':
+    case 'S':
+    case 'A':
+      tile.Type = START;
+      break;
+    }
+    return tile;
+  }
 
   // Visuals lookup, purely for looking 
   unsigned char Manager::lookupASCII(TileType t)
@@ -79,6 +137,7 @@ namespace GA
       return RConsole::RED;
     }
   }
+
 
   // Safely gets the location of a tile in memory
   Tile *Manager::getLocSafe(size_t x, size_t y)

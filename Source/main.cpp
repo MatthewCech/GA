@@ -23,8 +23,15 @@ GA experiments, and more!
 // Application entry point
 int main(int argc, char** argv)
 {
+  // Verify number of args
+  if (argc != 2)
+  {
+    std::cout << "Incorrect number of arguments! Format is: <appname> <file input>\n\n";
+    return -1;
+  }
+
   // Variables
-  GA::Manager manager(80, 20);
+  GA::Manager manager(argv[1]);
 
   // Setup
   RConsole::Canvas::SetCursorVisible(true);
