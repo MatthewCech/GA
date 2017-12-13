@@ -9,6 +9,8 @@ GA experiments, and more!
 *****************************************************************************/
 #include <iostream>               // std::cout
 #include <RUtils/RTimekeeper.hpp>  // Rutils::RException
+#include <cstdlib>
+#include <ctime>
 
 // Input and drawing utilities.
 #include "console-input.h"
@@ -23,6 +25,8 @@ GA experiments, and more!
 // Application entry point
 int main(int argc, char** argv)
 {
+  std::srand(static_cast<unsigned int>(std::time(nullptr)));
+
   // Verify number of args
   if (argc != 2)
   {

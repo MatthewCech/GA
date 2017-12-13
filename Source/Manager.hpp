@@ -2,11 +2,53 @@
 #include "console-utils.hpp"
 #include "Tile.hpp"
 #include <string>
+#include <vector>
 
-
+#define NONE_COST 1
+#define WALL_COST 10
 
 namespace GA
 {
+  class Path
+  {
+  public:
+    Path(const Path &rhs)
+      : ControlPoints(rhs.ControlPoints)
+      , IsValidPath(rhs.IsValidPath)
+      , Cost(rhs.Cost)
+      , WallCount(rhs.WallCount)
+    {  }
+
+    Path(const std::vector<PathPoint> path) 
+      : ControlPoints(path)
+      , IsValidPath(true)
+      , Cost(0) 
+      , WallCount(0)
+    { ReCalculate(); }
+
+    void ReCalculate()
+    {
+      IsValidPath = true;
+      Cost = 0;
+      WallCount = 0;
+
+      for (size_t i = 0; i < ControlPoints.size(); ++i)
+        if (ControlPoints[i].Valid == false)
+        {
+          Cost += WALL_COST;
+          WallCount += 1;
+          IsValidPath = false;
+        }
+        else
+          Cost += NONE_COST;
+    }
+
+    std::vector<PathPoint> ControlPoints;
+    bool IsValidPath = false;
+    size_t Cost = INT_MAX;
+    size_t WallCount = 0;
+  };
+
   class Manager
   {
   public:
@@ -16,15 +58,25 @@ namespace GA
     void PlaceRock(size_t x, size_t y, size_t side_size);
 
   private:
+    // GA
+    void init();
+    void stepOnce(bool includeParent);
+    Path mutate(const Path &path, float percentage = 0.1f);
+    Path getSquarePath();
+    void clearPathData();
+    void applyPathData(const Path &points);
+
     // Private Functions
-    void draw();
-    unsigned char lookupASCII(TileType t);
+    void Manager::draw(RConsole::Field2D<Tile> &toDraw);
+    unsigned char lookupASCII(Tile t);
     Tile parseFileChar(char c);
-    RConsole::Color lookupColor(TileType t);
+    RConsole::Color lookupColor(Tile t);
     Tile *getLocSafe(size_t x, size_t y);
 
     // Variables
     RConsole::Field2D<Tile> _tiles;
+    const Path *_activePath;
+    std::vector<Path> _allPathsEver;
     size_t _width;
     size_t _height;
   };
