@@ -11,11 +11,13 @@ namespace GA
     size_t X;
     size_t Y;
     bool Valid = true;
+    int PointNum = 0;
   };
 
   struct Tile
   {
     TileType Type = NONE;
     bool IsPath = false;
+    int DisplayNum = 0;
   };
 }

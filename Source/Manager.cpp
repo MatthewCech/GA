@@ -5,7 +5,7 @@
 #include <cstdlib>
 
 #define REM_P(p) (points[p.X][p.Y] = PathPoint())
-#define P_AT(x, y) (x > 0 && x < _width && y > 0 && y < _height)
+#define P_AT(x, y) (x > 0 && x < _width && y > 0 && y < _height && points[x][y].X == INT_MAX)
 #define P_LEFT  (P_AT(p.X-1, p.Y) ? points[p.X - 1][p.Y].X != INT_MAX : false)
 #define P_RIGHT (P_AT(p.X+1, p.Y) ? points[p.X + 1][p.Y].X != INT_MAX : false)
 #define P_UP    (P_AT(p.X, p.Y-1) ? points[p.X][p.Y - 1].X != INT_MAX : false)
@@ -18,6 +18,13 @@
 #define ADD_DL  { if(P_AT(p.X-1, p.Y+1)) { points[p.X - 1][p.Y + 1] = PathPoint(p.X - 1, p.Y + 1, _tiles[p.X - 1][p.Y + 1].Type == WALL ? false : true); REM_P(p); }}
 #define ADD_R  { if(P_AT(p.X+1, p.Y)) { points[p.X+1][p.Y] = PathPoint(p.X+1, p.Y, _tiles[p.X+1][p.Y].Type == WALL ? false : true); REM_P(p);}}
 #define ADD_DR  { if(P_AT(p.X+1, p.Y+1)) { points[p.X + 1][p.Y + 1] = PathPoint(p.X + 1, p.Y + 1, _tiles[p.X + 1][p.Y + 1].Type == WALL ? false : true); REM_P(p); }}
+
+
+#define NUMBER_OF_CHILDREN_TO_TRY 5
+#define DELAY_MS 10
+#define INCLUDE_PARENT true
+
+
 namespace GA
 {
   // Constructor that builds this from a file.
@@ -89,13 +96,14 @@ namespace GA
 
   void Manager::stepOnce(bool includeParent)
   {
-    const int NUMBER_OF_CHILDREN_TO_TRY = 5;
     std::vector<Path> mutated;
     if (includeParent)
       mutated.push_back(_allPathsEver[_allPathsEver.size() - 1]);
 
     for(int i = 0; i < NUMBER_OF_CHILDREN_TO_TRY; ++i)
       mutated.push_back(mutate(_allPathsEver[_allPathsEver.size() - 1], .1f));
+
+    mutated[std::rand() % mutated.size()].Cost += WALL_COST * 5;
 
     int best = 0;
     for (size_t i = 0; i < mutated.size(); ++i)
@@ -120,14 +128,18 @@ namespace GA
       float val = static_cast<float>(std::rand()) / RAND_MAX;
       if (val < percentage)
       {
-        int val = std::rand() % 4;
+        int val = std::rand() % 8;
         PathPoint p = path.ControlPoints[i];
         switch (val)
         {
-          case 0: if (P_LEFT && P_RIGHT) { ADD_UL ADD_U ADD_UR } break;
-          case 1: if (P_LEFT && P_RIGHT) { ADD_DL ADD_D ADD_DR } break;
-          case 2: if (P_UP && P_DOWN) { ADD_L ADD_UL ADD_DL } break;
-          case 3: if (P_UP && P_DOWN) { ADD_R ADD_UR ADD_DR } break;
+          case 0: ADD_UL break;
+          case 1: ADD_U break;
+          case 2: ADD_UR break;
+          case 3: ADD_DL break;
+          case 4: ADD_D break;
+          case 5: ADD_DR break;
+          case 6: ADD_L break;
+          case 7: ADD_R break;
         }
       }
     }
@@ -160,7 +172,7 @@ namespace GA
 
       _tiles.IncrementX();
     }
-
+    bool include = true;
     bool shouldClean = false;
     while (start.Y - goal.Y != 0)
     {
@@ -174,7 +186,9 @@ namespace GA
       else
         start.Valid = true;
 
-      path.push_back(start);
+      if (include)
+        path.push_back(start);
+      //include = !include;
       shouldClean = true;
     }
 
@@ -190,12 +204,14 @@ namespace GA
       else
         start.Valid = true;
 
-      path.push_back(start);
+      if(include)
+        path.push_back(start);
+      //include = !include;
       shouldClean = true;
     }
 
-    if(shouldClean)
-      path.erase(path.end() - 1);
+    //if(shouldClean)
+    //  path.erase(path.end() - 1);
 
     return Path(path);
   }
@@ -206,6 +222,7 @@ namespace GA
 
     while (_tiles.GetIndex() < _tiles.Length())
     {
+      _tiles.Get().DisplayNum = 0;
       _tiles.Get().IsPath = false;
       _tiles.IncrementX();
     }
@@ -217,7 +234,10 @@ namespace GA
 
     clearPathData();
     for (size_t i = 0; i < path.ControlPoints.size(); ++i)
+    {
+      _tiles[path.ControlPoints[i].X][path.ControlPoints[i].Y].DisplayNum = path.ControlPoints[i].PointNum;
       _tiles[path.ControlPoints[i].X][path.ControlPoints[i].Y].IsPath = true;
+    }
 
     _activePath = &path;
   }
@@ -225,10 +245,11 @@ namespace GA
   // Runs the primary application
   bool Manager::Run()
   {
-    stepOnce(false);
+    stepOnce(INCLUDE_PARENT);
     applyPathData(_allPathsEver[_allPathsEver.size() - 1]);
     draw(_tiles);
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    std::this_thread::sleep_for(std::chrono::milliseconds(DELAY_MS));
+    ++iterations;
     return true;
   }
 
@@ -253,6 +274,7 @@ namespace GA
     RConsole::Canvas::DrawString((std::string("Current Path Cost: ") + std::to_string(_activePath->Cost)).c_str(), 1.0f, ++offset, RConsole::WHITE);
     RConsole::Canvas::DrawString((std::string("Current Path Walls: ") + std::to_string(_activePath->WallCount)).c_str(), 1.0f, ++offset, RConsole::WHITE);
     RConsole::Canvas::DrawString((std::string("Current Path Validity: ") + (_activePath->IsValidPath ? "valid" : "invalid")).c_str(), 1.0f, ++offset, RConsole::WHITE);
+    RConsole::Canvas::DrawString((std::string("Iterations: ") + std::to_string(iterations)).c_str(), 1.0f, ++offset, RConsole::WHITE);
   }
 
   // Characters in the file that need parsing out.
@@ -285,8 +307,11 @@ namespace GA
   // Visuals lookup, purely for looking 
   unsigned char Manager::lookupASCII(Tile t)
   {
-    if(t.IsPath)
-      return static_cast<unsigned char>(254);
+    if (t.IsPath)
+    {
+      return 'A' + t.DisplayNum;
+      //return static_cast<unsigned char>(254);
+    }
 
     switch (t.Type)
     {
