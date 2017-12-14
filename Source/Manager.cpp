@@ -21,7 +21,7 @@
 
 
 #define NUMBER_OF_CHILDREN_TO_TRY 5
-#define DELAY_MS 10
+#define DELAY_MS 0
 #define INCLUDE_PARENT true
 
 
@@ -249,7 +249,13 @@ namespace GA
     applyPathData(_allPathsEver[_allPathsEver.size() - 1]);
     draw(_tiles);
     std::this_thread::sleep_for(std::chrono::milliseconds(DELAY_MS));
-    ++iterations;
+    ++_iterations;
+    //std::fstream fileObject("log.txt", std::ios::out | std::ios::trunc);
+    //for (size_t i = 0; i < _allPathsEver.size(); ++i)
+    //  fileObject << _iterations << ", " << _allPathsEver[i].Cost << "\n";
+
+    //if (_iterations > 2000)
+    //  return false;
     return true;
   }
 
@@ -274,7 +280,7 @@ namespace GA
     RConsole::Canvas::DrawString((std::string("Current Path Cost: ") + std::to_string(_activePath->Cost)).c_str(), 1.0f, ++offset, RConsole::WHITE);
     RConsole::Canvas::DrawString((std::string("Current Path Walls: ") + std::to_string(_activePath->WallCount)).c_str(), 1.0f, ++offset, RConsole::WHITE);
     RConsole::Canvas::DrawString((std::string("Current Path Validity: ") + (_activePath->IsValidPath ? "valid" : "invalid")).c_str(), 1.0f, ++offset, RConsole::WHITE);
-    RConsole::Canvas::DrawString((std::string("Iterations: ") + std::to_string(iterations)).c_str(), 1.0f, ++offset, RConsole::WHITE);
+    RConsole::Canvas::DrawString((std::string("Iterations: ") + std::to_string(_iterations)).c_str(), 1.0f, ++offset, RConsole::WHITE);
   }
 
   // Characters in the file that need parsing out.

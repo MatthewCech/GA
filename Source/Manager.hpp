@@ -90,6 +90,6 @@ namespace GA
     std::vector<Path> _allPathsEver;
     size_t _width;
     size_t _height;
-    size_t iterations = 0;
+    size_t _iterations = 0;
   };
 }
